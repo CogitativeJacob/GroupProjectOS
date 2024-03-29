@@ -4,40 +4,33 @@
 
 
 void enterMonitor(MonitorQueue* q, Transaction* t) {
-    //printf("entered 1: %d\n", getpid());
     pthread_mutex_lock(&q->lock); // first lock and add self to queue
 
-    //printf("entered 2: %d\n", getpid());
     QueueNode newNode = {getpid(), NULL};
 
     if(q->front == NULL){
         q->front = &newNode; // if empty add to front
         q->rear = q->front;
-        //printf("first: %d\n", getpid());
     }else{
-        //printf("entered 3: %d\n", getpid());
         q->rear->next = &newNode; // else add to rear
         q->rear = q->rear->next;
     }
     
     
-
     //printf("Added self to q: %d\n", getpid());
 
     while(q->front->pid != getpid()){
         //printf("still waiting on signal: %d -- %d\n", getpid(), q->front->pid);
-        pthread_cond_wait(&q->cond, &q->lock); // wait of not in front of queue
+        pthread_cond_wait(&q->cond, &q->lock); // wait of not in front of queue and unlock queue
     }
     
     appendTransactionToFile(t); // do work
 
-    //printf("appended: %d\n", getpid());
-
-    pthread_mutex_unlock(&q->lock);
+    pthread_mutex_unlock(&q->lock); // unlock queue for next
 }
 
 void exitMonitor(MonitorQueue* q){
-    pthread_mutex_lock(&q->lock);
+    pthread_mutex_lock(&q->lock); // lock queue to remove self from front
 
     //printf("removing self from queue: %d\n", getpid());
 
@@ -45,6 +38,7 @@ void exitMonitor(MonitorQueue* q){
 
     if(nextNode == NULL){
         q->front == NULL; // if only one in queue empty queue
+        q->rear = q->front;
     }else{
         q->front->next = NULL; // else pop and move to next
         q->front = nextNode;
@@ -52,8 +46,8 @@ void exitMonitor(MonitorQueue* q){
 
     
 
-    pthread_mutex_unlock(&q->lock);
+    pthread_mutex_unlock(&q->lock); // unlock queue
 
     //printf("signaling: %d\n", getpid());
-    pthread_cond_signal(&q->cond);
+    pthread_cond_signal(&q->cond); // signal that queue has been updated
 }

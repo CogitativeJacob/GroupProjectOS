@@ -43,10 +43,12 @@ int main() {
     pid_t pid;
     for (int i = 0; i < 5; i++) { // Simulate 5 concurrent transactions
         pid = fork();
-        //printf("Im alive: %d\n", pid);
         if (pid == 0) { // Child process
-            enterMonitor(&mq, &transaction);
-            exitMonitor(&mq);
+
+            // for threads with multiple transactions we will loop the following
+            // two lines for each one
+            enterMonitor(&mq, &transaction); // enter queue for monitor
+            exitMonitor(&mq); // exit queue for monitor
             return 0;
         }
     }
