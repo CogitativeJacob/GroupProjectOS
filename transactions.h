@@ -11,6 +11,7 @@ typedef struct {
     char accountNumber[20];
     double amount;
     char timestamp[20]; // Simplified for example purposes
+    struct Transaction* next; // Pointer to the next transaction in the queue
 } Transaction;
 
 void appendTransactionToFile(Transaction* transaction);

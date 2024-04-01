@@ -1,59 +1,57 @@
-#include "process_management.h"
-#include "shared_memory.h"
-#include "synchronization.h"
+#include "user_queue.h"
 #include "transactions.h"
-#include "utils.h"
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
 
-//global monitor queue
-MonitorQueue mq = {NULL, NULL, PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER};
+void processUserTransactions(const char* accountNumber) {
+    // Assuming transactions for this user have been enqueued
+    // This function simulates processing those transactions in a separate process
+    printf("Processing transactions for account: %s\n", accountNumber);
+    Transaction* transaction;
+    while ((transaction = dequeueTransaction(accountNumber)) != NULL) {
+        printf("Processed transaction for %s: Type %d, Amount %.2f\n",
+               accountNumber, transaction->transactionType, transaction->amount);
+        appendTransactionToFile(transaction);
+        // Here you would call enterMonitor, process the transaction, and then exitMonitor
+        free(transaction); // Assume dynamically allocated
+    }
+}
 
 int main() {
-    // // Initial setup: read transactions, initialize shared memory, etc.
     
-    // // Process transactions
-    
-    // int shmid = initSharedMemory(1024); // 1024 bytes for example
-    // char* shmaddr = (char*) attachSharedMemory(shmid, 0);
+    // Example transactions
+    Transaction transactions[] = {
+        {DEPOSIT, "Account1", 100.0, "2023-03-26"},
+        {WITHDRAW, "Account1", 50.0, "2023-03-27"},
+        {DEPOSIT, "Account2", 200.0, "2023-03-26"},
+        {TRANSFER, "Account2", 100.0, "2023-03-27", "Account1"} // Assuming TRANSFER transactions include a recipient account
+    };
+    int numTransactions = sizeof(transactions) / sizeof(transactions[0]);
 
-    // // Write something to shared memory
-    // strcpy(shmaddr, "Hello, shared memory!");
+    for (int i = 0; i < numTransactions; i++) {
+        enqueueTransaction(transactions[i].accountNumber, &transactions[i]);
+    }
 
-    // // Print what's in shared memory
-    // printf("%s\n", shmaddr);
+    const char* uniqueAccounts[] = {"Account1", "Account2"};
+    int numAccounts = sizeof(uniqueAccounts) / sizeof(uniqueAccounts[0]);
 
-    // // Detach from shared memory
-    // detachSharedMemory(shmaddr);
-
-    // // Cleanup shared memory
-    // cleanupSharedMemory(shmid);
-
-    // // Cleanup and exit
-
-    //Transaction testing (commented out above section)
-
-    //initialize queue
-
-    // Example transaction
-    Transaction transaction = {DEPOSIT, "123456789", 100.0, "2023-03-26"};
-
-    pid_t pid;
-    for (int i = 0; i < 5; i++) { // Simulate 5 concurrent transactions
-        pid = fork();
+    for (int i = 0; i < numAccounts; i++) {
+        pid_t pid = fork();
         if (pid == 0) { // Child process
-
-            // for threads with multiple transactions we will loop the following
-            // two lines for each one
-            enterMonitor(&mq, &transaction); // enter queue for monitor
-            exitMonitor(&mq); // exit queue for monitor
-            return 0;
+            // Process transactions for the account
+            processUserTransactions(uniqueAccounts[i]);
+            exit(0);
         }
     }
 
-    while (wait(NULL) > 0); // Wait for all child processes to finish
+    // Parent process waits for all child processes to complete
+    for (int i = 0; i < numAccounts; i++) {
+        wait(NULL);
+    }
+
+
 
     return 0;
 }
