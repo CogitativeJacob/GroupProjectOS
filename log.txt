@@ -1,4 +1,0 @@
-Type: 1, Account: Account1, Amount: 100.00, Timestamp: 2023-03-26
-Type: 1, Account: Account2, Amount: 200.00, Timestamp: 2023-03-26
-Type: 1, Account: Account2, Amount: 200.00, Timestamp: 2023-03-26
-Type: 1, Account: Account1, Amount: 100.00, Timestamp: 2023-03-26
