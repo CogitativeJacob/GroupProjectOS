@@ -8,6 +8,7 @@
 
 void appendTransactionToFile(Transaction* transaction) {
     //pthread_mutex_lock(&fileMutex); // Lock the mutex before accessing the file
+    //Need to use shared memory here
 
     FILE* file = fopen("log.txt", "a"); // Open the file in append mode
     if (file != NULL) {

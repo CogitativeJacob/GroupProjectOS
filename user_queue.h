@@ -13,7 +13,7 @@ typedef struct UserQueue {
 extern UserQueue userQueues[MAX_USERS];
 extern int userCount;
 
-
+void printUserQueues();
 void enqueueTransaction(const char* accountNumber, Transaction* transaction);
 Transaction* dequeueTransaction(const char* accountNumber);
 

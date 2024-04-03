@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "transactions.h"
 #include <stdio.h>
+#include "utils.h"
 
 // user_queue.c
 UserQueue userQueues[MAX_USERS];
@@ -62,5 +63,32 @@ Transaction* dequeueTransaction(const char* accountNumber) {
         return transaction;
     }
     return NULL; // If the queue is empty or not found
+}
+
+// Helper function to get a string representation of the transaction type
+const char* getTransactionTypeString(transType type) {
+    switch (type) {
+        case CREATE: return "CREATE";
+        case DEPOSIT: return "DEPOSIT";
+        case WITHDRAW: return "WITHDRAW";
+        case INQUIRY: return "INQUIRY";
+        case TRANSFER: return "TRANSFER";
+        case CLOSE: return "CLOSE";
+        default: return "UNKNOWN";
+    }
+}
+
+void printUserQueues() {
+    printf("Printing all user queues and their transactions:\n");
+    for (int i = 0; i < numUniqueUsers; i++) {
+        printf("User: %s\n", uniqueUsers[i]);
+        UserQueue* queue = &userQueues[i];
+        Transaction* transaction = queue->front;
+        while (transaction != NULL) {
+            printf("\tTransaction Type: %s, Amount: %.2f\n",
+                   getTransactionTypeString(transaction->transactionType), transaction->amount);
+            transaction = transaction->next;
+        }
+    }
 }
 

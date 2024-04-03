@@ -1,6 +1,18 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-// Functions for file operations, logging, etc.
+#include "transactions.h"
+
+#define MAX_USERS 100
+#define MAX_LINE_LENGTH 256
+
+extern char uniqueUsers[MAX_USERS][20];
+extern int numUniqueUsers;
+
+
+static void trackUser(const char* accountNumber);
+static Transaction* createTransactionFromLine(const char* line);
+void parseAndEnqueueTransactions(const char* filename);
+void processUserTransactions(const char* accountNumber);
 
 #endif
