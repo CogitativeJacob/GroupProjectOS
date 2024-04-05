@@ -9,7 +9,7 @@
 void appendTransactionToFile(Transaction* transaction) {
     //pthread_mutex_lock(&fileMutex); // Lock the mutex before accessing the file
 
-    FILE* file = fopen("log.txt", "a"); // Open the file in append mode
+    FILE* file = fopen((transaction->accountNumber), "a"); // Open the file in append mode
     if (file != NULL) {
         fprintf(file, "Type: %d, Account: %s, Amount: %.2f, Timestamp: %s\n",
                 transaction->transactionType, transaction->accountNumber,
