@@ -14,7 +14,7 @@ MonitorQueue mq = {.front = NULL, .rear = NULL, .lock = PTHREAD_MUTEX_INITIALIZE
 void processUserTransactions(const char* accountNumber) { //Not fully finished yet (waiting for monitor development)
     // Assuming transactions for this user have been enqueued
     // This function simulates processing those transactions in a separate process
-    printf("Processing transactions for account: %s\n", accountNumber);
+    //printf("Processing transactions for account: %s\n", accountNumber);
     Transaction* transaction;
     while ((transaction = dequeueTransaction(accountNumber)) != NULL) {
         //enterMonitor(&mq, transaction); // Synchronize access
@@ -29,7 +29,7 @@ int main() {
     
     parseAndEnqueueTransactions("/home/burger/Desktop/GroupProjectOS/input.txt");
 
-    printUserQueues();
+    //printUserQueues();
 
     // In your main driver file
     for (int i = 0; i < numUniqueUsers; i++) {
@@ -44,7 +44,7 @@ int main() {
     // Parent waits for all child processes to finish
     while (wait(NULL) > 0);
 
-    printUserQueues();
+    //printUserQueues();
 
     return 0;
 }
