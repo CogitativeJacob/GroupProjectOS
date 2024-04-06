@@ -13,11 +13,25 @@ typedef struct QueueNode {
 typedef struct {
     QueueNode* front;
     QueueNode* rear;
-    pthread_mutex_t lock; // For mutual exclusion
+    pthread_t thread0;
+    pthread_mutex_t lock0;
+    pthread_t thread1;
+    pthread_mutex_t lock1;
+    pthread_t thread2;
+    pthread_mutex_t lock2;
+    pthread_t thread3;
+    pthread_mutex_t lock3;
+    pthread_t thread4;
+    pthread_mutex_t lock4;
+    pthread_t thread5;
+    pthread_mutex_t lock5;
+    pthread_mutex_t MQlock; // For mutual exclusion
     pthread_cond_t cond; // For signaling
 } MonitorQueue;
 
 void enterMonitor(MonitorQueue* q, Transaction* t); // has transaction argument for testing
 void exitMonitor(MonitorQueue* q);
+
+void* grabWorker(void* transaction);
 
 #endif
