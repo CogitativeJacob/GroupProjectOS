@@ -24,8 +24,8 @@ int main() {
     Transaction transactions1[] = {
         {DEPOSIT, "Account1.txt", 100.0, "2023-03-26", NULL},
         {WITHDRAW, "Account1.txt", 50.0, "2023-03-27", NULL},
-        {DEPOSIT, "Account1.txt", 200.0, "2023-03-26", NULL},
-        {INQUIRY, "Account1.txt", 100.0, "2023-03-27", NULL} // Assuming TRANSFER transactions include a recipient account
+        {DEPOSIT, "Account1.txt", 200.0, "2023-03-28", NULL},
+        {INQUIRY, "Account1.txt", 100.0, "2023-03-29", NULL} // Assuming TRANSFER transactions include a recipient account
     };
 
     printf("Creating workers\n");
@@ -78,6 +78,7 @@ int main() {
             for(int j = 0; j < 4; j++){
                 //remove transaction from user queue and add to monitor queue
                 enterMonitor(&mq, &transactions1[j]);
+                printf(transactions1[j].timestamp);
                 exitMonitor(&mq);
             }
             exit(0);
