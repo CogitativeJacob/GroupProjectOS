@@ -35,6 +35,7 @@ int main() {
     {TRANSFER, "123456789", 100.0, "2023-03-29"}};
 
     parseAndEnqueueTransactions("/home/burger/Desktop/GroupProjectOS/input.txt");
+    printUserQueues();
     
     //Testing user queues
     for (int i = 0; i < numUniqueUsers; i++) {
