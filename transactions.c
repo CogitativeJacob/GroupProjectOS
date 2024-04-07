@@ -1,3 +1,10 @@
+/*
+* Group G
+* Jacob Hathaway
+* jacob.q.hathaway@okstate.edu
+* 4/7/2024
+*/
+
 #include "transactions.h"
 #include <stdio.h>
 #include <pthread.h>

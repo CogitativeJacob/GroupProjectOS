@@ -1,3 +1,10 @@
+/*
+* Group G
+* Hagen Patterson
+* hagen.patterson@okstate.edu
+* 4/7/2024
+*/
+
 #include "synchronization.h"
 #include "transactions.h"
 #include <stdio.h>

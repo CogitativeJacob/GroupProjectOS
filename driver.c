@@ -1,3 +1,10 @@
+/*
+* Group G
+* Jacob Hathaway
+* jacob.q.hathaway@okstate.edu
+* 4/7/2024
+*/
+
 #include "transactions.h"
 #include "synchronization.h"
 #include <stdio.h>
@@ -28,6 +35,7 @@ void processUserTransactions(const char* accountNumber) { //Not fully finished y
 
 
 int main() {
+    //Test transactions for monitor implementation
     Transaction transaction[] = {
     {DEPOSIT, "123456789", 100.0, "2023-03-26"},
     {DEPOSIT, "123456789", 50.0, "2023-03-27"},
