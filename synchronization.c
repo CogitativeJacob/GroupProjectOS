@@ -17,7 +17,7 @@ void enterMonitor(MonitorQueue* q, Transaction* t) {
     }
     
     
-    //printf("Added self to q: %d\n", getpid());
+    printf("Added self to q: %d\n", getpid());
 
     while(q->front->pid != getpid()){
         //printf("still waiting on signal: %d -- %d\n", getpid(), q->front->pid);

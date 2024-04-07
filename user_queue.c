@@ -50,7 +50,7 @@ Transaction* dequeueTransaction(const char* accountNumber) {
     // For simplicity, let's assume you find the queue and it's not empty
 
     UserQueue* queue = findOrCreateUserQueue(accountNumber);
-    //printf("Dequeuing transaction for account: %s\n", accountNumber);
+    printf("Dequeuing transaction for account: %s\n", accountNumber);
 
 
     if (queue != NULL && queue->front != NULL) {
