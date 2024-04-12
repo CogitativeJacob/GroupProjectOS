@@ -22,7 +22,7 @@ MonitorQueue mq = {.front = NULL, .rear = NULL, .lock0 = PTHREAD_MUTEX_INITIALIZ
 void processUserTransactions(const char* accountNumber) { //Not fully finished yet (waiting for monitor development)
     // Assuming transactions for this user have been enqueued
     // This function simulates processing those transactions in a separate process
-    //printf("Processing transactions for account: %s\n", accountNumber);
+    printf("Processing transactions for account: %s\n", accountNumber);
     Transaction* transaction;
     while ((transaction = dequeueTransaction(accountNumber)) != NULL) {
         enterMonitor(&mq, transaction); // Synchronize access
