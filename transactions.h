@@ -8,6 +8,8 @@
 #ifndef TRANSACTIONS_H
 #define TRANSACTIONS_H
 
+#include <pthread.h>
+
 typedef enum{
     CREATE, DEPOSIT, WITHDRAW,
     INQUIRY, TRANSFER, CLOSE
@@ -25,4 +27,4 @@ typedef struct {
 
 void appendTransactionToFile(Transaction* transaction);
 
-// #endif
+#endif
