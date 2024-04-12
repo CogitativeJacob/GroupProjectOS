@@ -25,10 +25,10 @@ void processUserTransactions(const char* accountNumber) { //Not fully finished y
     //printf("Processing transactions for account: %s\n", accountNumber);
     Transaction* transaction;
     while ((transaction = dequeueTransaction(accountNumber)) != NULL) {
-        //enterMonitor(&mq, transaction); // Synchronize access
+        enterMonitor(&mq, transaction); // Synchronize access
         printf("Processed transaction for %s: Type %d, Amount %.2f\n",
                accountNumber, transaction->transactionType, transaction->amount);
-        //exitMonitor(&mq);
+        exitMonitor(&mq);
         free(transaction); // Assume dynamically allocated
     }
 }
@@ -55,20 +55,20 @@ int main() {
         }
     }
 
-    //Using Monitor
-    pid_t pid;
-    for (int i = 0; i < 4; i++) { // Simulate 5 concurrent transactions
-        pid = fork();
-        if (pid == 0) { // Child process
+    // //Using Monitor
+    // pid_t pid;
+    // for (int i = 0; i < 4; i++) { // Simulate 5 concurrent transactions
+    //     pid = fork();
+    //     if (pid == 0) { // Child process
 
-            // for threads with multiple transactions we will loop the following
-            // two lines for each one
-            enterMonitor(&mq, &transaction[i]); // enter queue for monitor
-            printf("Transaction %s entered monitor\n", transaction[i].accountNumber);
-            exitMonitor(&mq); // exit queue for monitor
-            return 0;
-        }
-    }
+    //         // for threads with multiple transactions we will loop the following
+    //         // two lines for each one
+    //         enterMonitor(&mq, &transaction[i]); // enter queue for monitor
+    //         printf("Transaction %s entered monitor\n", transaction[i].accountNumber);
+    //         exitMonitor(&mq); // exit queue for monitor
+    //         return 0;
+    //     }
+    // }
 
     while (wait(NULL) > 0); // Wait for all child processes to finish
 

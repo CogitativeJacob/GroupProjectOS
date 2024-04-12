@@ -23,5 +23,6 @@ extern int userCount;
 void printUserQueues();
 void enqueueTransaction(const char* accountNumber, Transaction* transaction);
 Transaction* dequeueTransaction(const char* accountNumber);
+const char* getTransactionTypeString(transType type);
 
 #endif

@@ -66,7 +66,12 @@ Transaction* dequeueTransaction(const char* accountNumber) {
         if (queue->front == NULL) {
             queue->rear = NULL; // If the queue is now empty, update the rear pointer
         }
-        //printf("Dequeued transaction: %s, %.2f\n", transaction->accountNumber, transaction->amount);
+        
+        printf("Processing transaction for account: %s, Type: %s, Amount: %.2f\n",
+       transaction->accountNumber,
+       getTransactionTypeString(transaction->transactionType),
+       transaction->amount);
+
         return transaction;
     }
     return NULL; // If the queue is empty or not found
