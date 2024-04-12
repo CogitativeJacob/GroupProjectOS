@@ -1,4 +1,10 @@
-#include "user_queue.h"
+/*
+* Group G
+* Jacob Hathaway
+* jacob.q.hathaway@okstate.edu
+* 4/7/2024
+*/
+
 #include "transactions.h"
 #include "synchronization.h"
 #include <stdio.h>
@@ -9,7 +15,9 @@
 #include <pthread.h>
 
 
-MonitorQueue mq = {.front = NULL, .rear = NULL, .lock = PTHREAD_MUTEX_INITIALIZER, .cond = PTHREAD_COND_INITIALIZER};
+MonitorQueue mq = {.front = NULL, .rear = NULL, .lock0 = PTHREAD_MUTEX_INITIALIZER, .lock1 = PTHREAD_MUTEX_INITIALIZER,
+ .lock2 = PTHREAD_MUTEX_INITIALIZER, .lock3 = PTHREAD_MUTEX_INITIALIZER, .lock4 = PTHREAD_MUTEX_INITIALIZER,
+ .lock5 = PTHREAD_MUTEX_INITIALIZER, .MQlock = PTHREAD_MUTEX_INITIALIZER, .cond = PTHREAD_COND_INITIALIZER};
 
 void processUserTransactions(const char* accountNumber) { //Not fully finished yet (waiting for monitor development)
     // Assuming transactions for this user have been enqueued
@@ -25,26 +33,44 @@ void processUserTransactions(const char* accountNumber) { //Not fully finished y
     }
 }
 
+
 int main() {
-    
+    //Test transactions for monitor implementation
+    Transaction transaction[] = {
+    {DEPOSIT, "123456789", 100.0, "2023-03-26"},
+    {DEPOSIT, "123456789", 50.0, "2023-03-27"},
+    {INQUIRY, "123456789", 0, "2023-03-28"},
+    {TRANSFER, "123456789", 100.0, "2023-03-29"}};
+
     parseAndEnqueueTransactions("/home/burger/Desktop/GroupProjectOS/input.txt");
-
-    //printUserQueues();
-
-    // In your main driver file
+    printUserQueues();
+    
+    //Testing user queues
     for (int i = 0; i < numUniqueUsers; i++) {
         pid_t pid = fork();
         if (pid == 0) { // Child process
-            printf(uniqueUsers[i]);
+            //printf(uniqueUsers[i]);
             processUserTransactions(uniqueUsers[i]);
             exit(0);
         }
     }
 
-    // Parent waits for all child processes to finish
-    while (wait(NULL) > 0);
+    //Using Monitor
+    pid_t pid;
+    for (int i = 0; i < 4; i++) { // Simulate 5 concurrent transactions
+        pid = fork();
+        if (pid == 0) { // Child process
 
-    //printUserQueues();
+            // for threads with multiple transactions we will loop the following
+            // two lines for each one
+            enterMonitor(&mq, &transaction[i]); // enter queue for monitor
+            printf("Transaction %s entered monitor\n", transaction[i].accountNumber);
+            exitMonitor(&mq); // exit queue for monitor
+            return 0;
+        }
+    }
+
+    while (wait(NULL) > 0); // Wait for all child processes to finish
 
     return 0;
 }

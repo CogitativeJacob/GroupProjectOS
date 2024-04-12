@@ -1,3 +1,10 @@
+/*
+* Group G
+* Abhiram Reddy Alugula
+* aalugul@okstate.edu
+* 4/7/2024
+*/
+
 #ifndef TRANSACTIONS_H
 #define TRANSACTIONS_H
 
