@@ -1,44 +1,21 @@
-/*
-* Group G
-* Hagen Patterson
-* hagen.patterson@okstate.edu
-* 4/7/2024
-*/
-
 #ifndef SYNCHRONIZATION_H
 #define SYNCHRONIZATION_H
 
 #include "transactions.h"
 #include <pthread.h>
-#include <unistd.h> 
 
-typedef struct QueueNode {
-    pid_t pid; // id of thread
-    struct QueueNode* next;
-} QueueNode;
+typedef struct Monitor {
+    pthread_mutex_t lock;       // Mutex for protecting the monitor
+    pthread_cond_t cond;        // Condition variable for managing the queue
+} Monitor;
 
-typedef struct {
-    QueueNode* front;
-    QueueNode* rear;
-    pthread_t thread0;
-    pthread_mutex_t lock0;
-    pthread_t thread1;
-    pthread_mutex_t lock1;
-    pthread_t thread2;
-    pthread_mutex_t lock2;
-    pthread_t thread3;
-    pthread_mutex_t lock3;
-    pthread_t thread4;
-    pthread_mutex_t lock4;
-    pthread_t thread5;
-    pthread_mutex_t lock5;
-    pthread_mutex_t MQlock; // For mutual exclusion
-    pthread_cond_t cond; // For signaling
-} MonitorQueue;
+extern Monitor accountMonitor; // Declare a monitor for account transactions
 
-void enterMonitor(MonitorQueue* q, Transaction* t); // has transaction argument for testing
-void exitMonitor(MonitorQueue* q);
+void enterAccount(Account *account);
+void exitAccount(Account *account);
 
-void* grabWorker(void* transaction);
+void initMonitor();             // Function to initialize the monitor
+void enterMonitor(Transaction* transaction);
+void leaveMonitor();
 
 #endif
