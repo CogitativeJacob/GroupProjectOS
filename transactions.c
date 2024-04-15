@@ -15,6 +15,7 @@ void initAccount(Account *account, const char *accountNumber, double initialBala
 }
 
 void createAccount(const char* accountNumber, double initialBalance) {
+    printf("Creating file for %s\n", accountNumber);
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
     FILE* file = fopen(filename, "w"); // Create a new file or overwrite an existing one
@@ -62,14 +63,17 @@ void updateAccountBalance(const char* accountNumber, double newBalance) {
 
 
 void closeAccount(const char* accountNumber) {
+    printf("Closing the account.\n");
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
+    printf("%s\n", filename);
     if (remove(filename) != 0) {
         perror("Failed to close account");
     }
 }
 
 void processTransaction(Account *account, const Transaction* transaction) {
+    printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //second account cannot get past this
     enterAccount(account);
 
     switch (transaction->transactionType) {
@@ -94,7 +98,13 @@ void processTransaction(Account *account, const Transaction* transaction) {
             printf("Account %s balance: %.2f\n", transaction->accountNumber, balance);
             break;
         case TRANSFER:
-            // Add logic for handling transfers
+            // Add logic for handling transfers:
+            //(PSEUDO)
+            //already in sender account so,
+            //enter recipient account
+            //withdraw from sender
+            //deposit to recipient
+            //exit recipient account
             break;
         case CLOSE:
             closeAccount(transaction->accountNumber);

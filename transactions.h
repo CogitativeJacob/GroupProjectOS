@@ -16,6 +16,7 @@ typedef enum {
 typedef struct {
     transType transactionType;
     char accountNumber[20];
+    Account* account; //keeps accounts
     double amount;
     char recipientAccountNumber[20]; // Only used for TRANSFER
     char timestamp[20];

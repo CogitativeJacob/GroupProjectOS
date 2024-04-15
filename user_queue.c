@@ -45,12 +45,13 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
     }
 
     printf("Enqueued transaction for %s: Type %s, Amount %.2f\n", 
-           transaction.accountNumber, 
+           queue->rear->transaction.account->accountNumber, 
            getTransactionTypeString(transaction.transactionType), 
-           transaction.amount);
+           queue->rear->transaction.amount);
 }
 
 Transaction* dequeueTransaction(const char* accountNumber) {
+    //printf("Prepping to dequeue transaction for %s\n", accountNumber);
     for (int i = 0; i < userCount; i++) {
         if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
             if (userQueues[i].front == NULL) {
@@ -71,7 +72,7 @@ Transaction* dequeueTransaction(const char* accountNumber) {
             }
 
             free(node);
-            printf("Dequeued transaction for %d\n", accountNumber);
+            //printf("Dequeued transaction: %d for %s.\n", transaction->transactionType, transaction->accountNumber);
             return transaction;
         }
     }
