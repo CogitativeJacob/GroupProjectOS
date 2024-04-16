@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 void initAccount(Account *account, const char *accountNumber, double initialBalance) {
     strcpy(account->accountNumber, accountNumber);
     account->balance = initialBalance;
@@ -32,7 +33,7 @@ void createAccount(const char* accountNumber, double initialBalance) {
 double getAccountBalance(const char* accountNumber) {
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
-    printf("Attempting to open file: %s for %s\n", filename, accountNumber);  // Debug print
+    //printf("Attempting to open file: %s for %s\n", filename, accountNumber);  // Debug print
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Failed to open account file");
@@ -50,7 +51,7 @@ double getAccountBalance(const char* accountNumber) {
 void updateAccountBalance(const char* accountNumber, double newBalance) {
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
-    printf("Attempting to update file: %s\n", filename);  // Debug print
+    //printf("Attempting to update file: %s\n", filename);  // Debug print
     FILE* file = fopen(filename, "w");
     if (file) {
         fprintf(file, "%.2f", newBalance);
@@ -58,6 +59,15 @@ void updateAccountBalance(const char* accountNumber, double newBalance) {
     } else {
         perror("Failed to update account file");
     }
+}
+
+Account* findAccount(const char* accountNumber){
+    for (int i = 0; i < userCount; i++) {
+        if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
+            return userQueues[i].front->transaction.account;
+        }
+    }
+    return NULL;
 }
 
 
@@ -73,15 +83,22 @@ void closeAccount(const char* accountNumber) {
 }
 
 void processTransaction(Account *account, const Transaction* transaction) {
-    printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //second account cannot get past this
+    //printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
     enterAccount(account);
+
+    printf("Closed: %d, Transaction: %d\n", account->closed, transaction->transactionType); //Debug print
+    if(account->closed && transaction->transactionType != CREATE){
+        printf("Cannot perform transaction because account is closed.\n");
+        exitAccount(account);
+        return;
+    }
 
     switch (transaction->transactionType) {
         case CREATE:
+            account->closed = false;
             createAccount(transaction->accountNumber, transaction->amount);
             break;
         case DEPOSIT:
-            // Simplified example; ensure to handle errors and edge cases in real scenarios
             double balance = getAccountBalance(transaction->accountNumber);
             if (balance >= 0) {
                 updateAccountBalance(transaction->accountNumber, balance + transaction->amount);
@@ -98,15 +115,38 @@ void processTransaction(Account *account, const Transaction* transaction) {
             printf("Account %s balance: %.2f\n", transaction->accountNumber, balance);
             break;
         case TRANSFER:
-            // Add logic for handling transfers:
-            //(PSEUDO)
-            //already in sender account so,
+            //check recipient exists
+            Account* reciever = findAccount(transaction->recipientAccountNumber);
+            if(reciever == NULL){
+                printf("Cannot transfer $%.2f from %s to %s because recieving account does not exist.\n", transaction->amount, transaction->accountNumber, transaction->recipientAccountNumber);
+                break;
+            }
             //enter recipient account
+            enterAccount(reciever);
+            //check if account was closed
+            if(reciever->closed){
+                printf("Cannot transfer $%.2f from %s to %s because recieving account was closed.\n", transaction->amount, transaction->accountNumber, transaction->recipientAccountNumber);
+                exitAccount(reciever);
+                break;
+            }
             //withdraw from sender
+            balance = getAccountBalance(transaction->accountNumber);
+            if (balance >= transaction->amount) {
+                updateAccountBalance(transaction->accountNumber, balance - transaction->amount);
+            }else{
+                printf("Cannot transfer $%.2f from %s to %s due lack of funds.\n", balance, transaction->accountNumber, transaction->recipientAccountNumber);
+                break;
+            }
             //deposit to recipient
+            balance = getAccountBalance(transaction->recipientAccountNumber);
+            if (balance >= 0) {
+                updateAccountBalance(transaction->recipientAccountNumber, balance + transaction->amount);
+            }
             //exit recipient account
+            exitAccount(reciever);
             break;
         case CLOSE:
+            account->closed = true;
             closeAccount(transaction->accountNumber);
             break;
         default:

@@ -2,11 +2,13 @@
 #define TRANSACTIONS_H
 
 #include <pthread.h>
+#include <stdbool.h>
 
 typedef struct {
     char accountNumber[20];
     double balance;
     pthread_mutex_t lock;
+    bool closed;     //check if account is still open
 } Account;
 
 typedef enum {
