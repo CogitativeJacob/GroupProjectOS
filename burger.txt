@@ -103,18 +103,13 @@ void processTransaction(const char* accountNumber, const Transaction* transactio
     //printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
 
     Account* account = findAccount(accountNumber);
-    if (account == NULL) {
-        if (transaction->transactionType == CREATE) {
-            account = createAccount(accountNumber, transaction->amount);
-            if (!account) {
-                printf("Failed to create account for %s\n", accountNumber);
-                return;
-            }
-        } else {
-            printf("Account %s does not exist.\n", accountNumber);
-            return;
-        }
+    if (account != NULL) {
+        enterAccount(account);
+    } else if (account == NULL && transaction->transactionType == CREATE) {
+        account->closed = false;
+        Account* account = createAccount(accountNumber, transaction->amount);
     }
+    enterAccount(account);
     
     if(account->closed && transaction->transactionType != CREATE){
         printf("Cannot perform transaction because account is closed.\n");

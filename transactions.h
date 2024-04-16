@@ -32,7 +32,7 @@ void closeAccount(const char* accountNumber);
 const char* getTransactionTypeString(transType type);  // Declaration
 
 void initAccount(Account *account, const char *accountNumber, double initialBalance);
-void processTransaction(Account *account, const Transaction *transaction);
+void processTransaction(const char* accountNumber, const Transaction *transaction);
 Account* findAccount(const char* accountNumber);
 
 #endif

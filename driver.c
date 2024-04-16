@@ -18,16 +18,6 @@ transType parseTransactionType(const char* typeStr) {
     //return UNKNOWN;
 }
 
-void processTransactionDirectly(const char* accountNumber, const char* typeStr, double amount, const char* recipientAccountNumber) {
-    Transaction transaction;
-    strcpy(transaction.accountNumber, accountNumber);
-    transaction.amount = amount;
-    strcpy(transaction.recipientAccountNumber, recipientAccountNumber);
-    transaction.transactionType = parseTransactionType(typeStr);
-
-    enqueueTransaction(accountNumber, transaction);
-}
-
 void readAndEnqueueTransactions(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -35,30 +25,32 @@ void readAndEnqueueTransactions(const char* filename) {
         return;
     }
 
-    fscanf(file, "%d", &numUsers);  // Number of transactions (assuming this is not actually the number of unique accounts)
+    fscanf(file, "%d", &numUsers);  // Read the number of users
 
-    char accountNumber[20], transTypeStr[20], recipientAccountNumber[20];
-    double amount;
     char line[256];
-
     while (fgets(line, sizeof(line), file)) {
-        // Reset recipient account number each time
-        memset(recipientAccountNumber, 0, sizeof(recipientAccountNumber));
+        char accountNumber[20], transTypeStr[20], recipientAccountNumber[20];
+        double amount;
+        int scanCount = sscanf(line, "%s %s %lf %s", accountNumber, transTypeStr, &amount, recipientAccountNumber);
 
-        // Parse the transaction details from the line
-        if (sscanf(line, "%s %s %lf %s", accountNumber, transTypeStr, &amount, recipientAccountNumber) == 4) {
-            // It's a transfer with a recipient
-            processTransactionDirectly(accountNumber, transTypeStr, amount, recipientAccountNumber);
-        } else if (sscanf(line, "%s %s %lf", accountNumber, transTypeStr, &amount) == 3) {
-            // Regular transaction without recipient
-            processTransactionDirectly(accountNumber, transTypeStr, amount, "");
-        } else {
-            fprintf(stderr, "Invalid transaction format: %s", line);
+        Transaction transaction;
+        memset(&transaction, 0, sizeof(Transaction)); // Clear the transaction structure
+        strcpy(transaction.accountNumber, accountNumber);
+        transaction.transactionType = parseTransactionType(transTypeStr);
+
+        if (transaction.transactionType == TRANSFER && scanCount == 4) {
+            strcpy(transaction.recipientAccountNumber, recipientAccountNumber);
+            transaction.amount = amount;
+        } else if (scanCount == 3) {
+            transaction.amount = amount;
         }
+
+        enqueueTransaction(accountNumber, transaction);
     }
 
     fclose(file);
 }
+
 
 
 void* threadProcessTransactions(void* arg) {
