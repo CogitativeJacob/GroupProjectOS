@@ -6,27 +6,44 @@
 #include <string.h>
 
 
-void initAccount(Account *account, const char *accountNumber, double initialBalance) {
-    strcpy(account->accountNumber, accountNumber);
-    account->balance = initialBalance;
-    printf("Creating account\n");
-    createAccount(accountNumber, initialBalance);
-    pthread_mutex_init(&account->lock, NULL);  // Initialize the mutex
+// void initAccount(Account *account, const char *accountNumber, double initialBalance) {
+//     strcpy(account->accountNumber, accountNumber);
+//     account->balance = initialBalance;
+//     printf("Creating account\n");
+//     createAccount(accountNumber, initialBalance);
+//     pthread_mutex_init(&account->lock, NULL);  // Initialize the mutex
     
-}
+// }
 
-void createAccount(const char* accountNumber, double initialBalance) {
+Account* createAccount(const char* accountNumber, double initialBalance) {
     printf("Creating file for %s\n", accountNumber);
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
     FILE* file = fopen(filename, "w"); // Create a new file or overwrite an existing one
+
+    Account* account = (Account*) malloc(sizeof(Account));
+    if (!account) {
+        fprintf(stderr, "Memory allocation failed for account struct\n");
+        return NULL;
+    }
+
     if (file) {
         fprintf(file, "%.2f", initialBalance);
         fclose(file);
         printf("Account file created successfully: %s\n", filename);
+
+        // Initialize the account struct
+        strcpy(account->accountNumber, accountNumber);
+        account->balance = initialBalance;
+        pthread_mutex_init(&account->lock, NULL); // Initialize the mutex
+        account->closed = false; // Initially, the account is open
+
+        return account;
     } else {
         perror("Failed to create account file");
         printf("Failed to create file: %s\n", filename);
+        free(account); // Avoid memory leak if file creation fails
+        return NULL;
     }
 }
 
@@ -82,16 +99,21 @@ void closeAccount(const char* accountNumber) {
     }
 }
 
-void processTransaction(Account *account, const Transaction* transaction) {
+void processTransaction(const char* accountNumber, const Transaction* transaction) {
     //printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
-    enterAccount(account);
 
-    printf("Closed: %d, Transaction: %d\n", account->closed, transaction->transactionType); //Debug print
+    Account* account = findAccount(accountNumber);
+    if (account != NULL) {
+        enterAccount(account);
+    }
+    
     if(account->closed && transaction->transactionType != CREATE){
         printf("Cannot perform transaction because account is closed.\n");
         exitAccount(account);
         return;
     }
+    printf("Closed: %d, Transaction: %d\n", account->closed, transaction->transactionType); //Debug print
+    
 
     switch (transaction->transactionType) {
         case CREATE:

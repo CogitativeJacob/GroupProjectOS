@@ -24,7 +24,7 @@ typedef struct {
     char timestamp[20];
 } Transaction;
 
-void createAccount(const char* accountNumber, double initialBalance);
+Account* createAccount(const char* accountNumber, double initialBalance);
 double getAccountBalance(const char* accountNumber);
 void updateAccountBalance(const char* accountNumber, double newBalance);
 void closeAccount(const char* accountNumber);
@@ -33,5 +33,6 @@ const char* getTransactionTypeString(transType type);  // Declaration
 
 void initAccount(Account *account, const char *accountNumber, double initialBalance);
 void processTransaction(Account *account, const Transaction *transaction);
+Account* findAccount(const char* accountNumber);
 
 #endif
