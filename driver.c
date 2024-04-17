@@ -28,6 +28,7 @@ void readAndEnqueueTransactions(const char* filename) {
     fscanf(file, "%d", &numUsers);  // Read the number of users
 
     char line[256];
+    int skipline = 0; //Fixes the attempted parse of the numUsers line
     while (fgets(line, sizeof(line), file)) {
         char accountNumber[20], transTypeStr[20], recipientAccountNumber[20];
         double amount;
@@ -45,7 +46,13 @@ void readAndEnqueueTransactions(const char* filename) {
             transaction.amount = amount;
         }
 
-        enqueueTransaction(accountNumber, transaction);
+        skipline++;
+        
+        if (skipline != 1) {
+            printf("%s\n", accountNumber);
+            enqueueTransaction(accountNumber, transaction);
+        }
+        
     }
 
     fclose(file);
@@ -56,9 +63,10 @@ void readAndEnqueueTransactions(const char* filename) {
 void* threadProcessTransactions(void* arg) {
     TransactionQueue* queue = (TransactionQueue*) arg;
     Transaction* transaction = dequeueTransaction(queue->accountNumber);
+    printf("Dequeued transaction for account: %s\n", transaction->accountNumber);
     while (transaction != NULL) {
         //enterMonitor(transaction);
-        //printf("Processing transaction for account: %s of type: %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
+        printf("Processing transaction for account: %s of type: %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
         processTransaction(transaction->account, transaction);
         free(transaction);
         transaction = dequeueTransaction(queue->accountNumber);
@@ -93,6 +101,7 @@ int main() {
     initMonitor(); // Initialize synchronization mechanisms if any
     readAndEnqueueTransactions("input.txt");
     printUserQueues();
+    processAllTransactionsConcurrently();
     //processAllTransactionsConcurrently(); // Process all transactions concurrently
 
 
