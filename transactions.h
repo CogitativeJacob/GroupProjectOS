@@ -8,36 +8,31 @@
 #ifndef TRANSACTIONS_H
 #define TRANSACTIONS_H
 
-// typedef enum{
-//     CREATE, DEPOSIT, WITHDRAW,
-//     INQUIRY, TRANSFER, CLOSE
-// } transType;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/file.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <time.h>
 
-// typedef struct {
-//     transType transactionType;
-//     char accountNumber[20];
-//     double amount;
-//     char timestamp[20];
-//     char recipientAccountNumber[20];
-//     struct Transaction* next;
-// } Transaction;
-
-
-// void appendTransactionToFile(Transaction* transaction);
-
-// #endif
+#define SHM_KEY 0x1234
+#define MAX_TRANSACTIONS 10
 
 typedef enum {
-    WITHDRAW, CREATE, DEPOSIT, INQUIRY, TRANSFER, CLOSE
-} TransType;
+    CREATE, DEPOSIT, WITHDRAW, INQUIRY, TRANSFER, CLOSE, FAILED
+} TransactionType;
 
 typedef struct {
-    TransType type;
+    TransactionType type;
     char accountNumber[20];
     double amount;
-    char recipientAccountNumber[20];
-} Transaction;
-
-void* process_transaction(void* arg);
+    char recipientAccountNumber[20]; // Used for transfers
+    char status[8]; // "success" or "failed"
+    char timestamp[20]; // Storing timestamp as string
+    int processed; // Flag to indicate if processed (1 = yes, 0 = no)
+} SharedTransaction;
 
 #endif
