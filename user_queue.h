@@ -21,7 +21,7 @@ extern TransactionQueue userQueues[MAX_USERS];  // Array of transaction queues
 extern int userCount;                           // Number of active queues
 
 // Queue operations
-void enqueueTransaction(const char* accountNumber, Transaction transaction);
+Account enqueueTransaction(const char* accountNumber, Transaction transaction);
 Transaction* dequeueTransaction(const char* accountNumber);
 void printUserQueues();
 

@@ -7,7 +7,7 @@
 TransactionQueue userQueues[MAX_USERS];
 int userCount = 0;
 
-void enqueueTransaction(const char* accountNumber, Transaction transaction) {
+Account enqueueTransaction(const char* accountNumber, Transaction transaction) {
     int found = -1;
     for (int i = 0; i < userCount; i++) {
         if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
@@ -15,16 +15,25 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
             break;
         }
     }
+    Account account = {"xx", 0.0, PTHREAD_MUTEX_INITIALIZER, true};
+
 
     TransactionQueue* queue;
     if (found == -1) {
         if (userCount >= MAX_USERS) {
             fprintf(stderr, "Maximum number of users reached.\n");
-            return;
+            return account;
         }
         queue = &userQueues[userCount++];
         strcpy(queue->accountNumber, accountNumber);
         queue->front = queue->rear = NULL;
+        strcpy(account.accountNumber, accountNumber);
+        //testing
+        if (strcmp(account.accountNumber, "xx") == 0) {
+            printf("Failed to create account for %s\n", accountNumber);
+            return account;
+        }
+        return account;
     } else {
         queue = &userQueues[found];
     }
@@ -32,7 +41,7 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
     QueueNode* newNode = (QueueNode*)malloc(sizeof(QueueNode));
     if (!newNode) {
         fprintf(stderr, "Memory allocation failed for new transaction node.\n");
-        return;
+        return account;
     }
     newNode->transaction = transaction;
     newNode->next = NULL;
@@ -48,10 +57,12 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
            queue->rear->transaction.account->accountNumber, 
            getTransactionTypeString(transaction.transactionType), 
            queue->rear->transaction.amount);
+
+    return account;
 }
 
 Transaction* dequeueTransaction(const char* accountNumber) {
-    //printf("Prepping to dequeue transaction for %s\n", accountNumber);
+    printf("Prepping to dequeue transaction for %s\n", accountNumber);
     for (int i = 0; i < userCount; i++) {
         if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
             if (userQueues[i].front == NULL) {
@@ -72,7 +83,7 @@ Transaction* dequeueTransaction(const char* accountNumber) {
             }
 
             free(node);
-            //printf("Dequeued transaction: %d for %s.\n", transaction->transactionType, transaction->accountNumber);
+            printf("Dequeued transaction: %d for %s.\n", transaction->transactionType, transaction->accountNumber);
             return transaction;
         }
     }

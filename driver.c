@@ -18,14 +18,31 @@ transType parseTransactionType(const char* typeStr) {
     //return UNKNOWN;
 }
 
-void readAndEnqueueTransactions(const char* filename) {
+void getNumUsers(const char* filename){
+    FILE* file = fopen(filename, "r");
+    char line[20];
+    if (!file) {
+        perror("Failed to open transactions file");
+        return;
+    }
+
+    fgets(line, sizeof(line), file);
+
+    fscanf(file, "%d", &numUsers);  // Read the number of users
+
+    fclose(file);
+}
+
+void readAndEnqueueTransactions(const char* filename, Account** list) {
+    int count = 0;
+
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Failed to open transactions file");
         return;
     }
 
-    fscanf(file, "%d", &numUsers);  // Read the number of users
+    //fscanf(file, "%d", &numUsers);  // Read the number of users
 
     char line[256];
     int skipline = 0; //Fixes the attempted parse of the numUsers line
@@ -46,11 +63,26 @@ void readAndEnqueueTransactions(const char* filename) {
             transaction.amount = amount;
         }
 
-        skipline++;
-        
-        if (skipline != 1) {
-            printf("%s\n", accountNumber);
-            enqueueTransaction(accountNumber, transaction);
+        if(skipline == 0){
+           skipline++;
+           continue;
+        }
+            
+        printf("%s\n", accountNumber);
+        Account newaccount = enqueueTransaction(accountNumber, transaction);
+
+        if(strcmp(newaccount.accountNumber, "xx") != 0){
+            int here = -1;
+            for(int i = 0; i <= count; i++){
+                if(strcmp(newaccount.accountNumber, list[i]) == 0){
+                    here = i;
+                }
+            }
+            if(here != -1){
+                *list[count] = newaccount;
+                count++;
+            }
+            
         }
         
     }
@@ -67,7 +99,7 @@ void* threadProcessTransactions(void* arg) {
     while (transaction != NULL) {
         //enterMonitor(transaction);
         printf("Processing transaction for account: %s of type: %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
-        processTransaction(transaction->account, transaction);
+        processTransaction(transaction->accountNumber, transaction);
         free(transaction);
         transaction = dequeueTransaction(queue->accountNumber);
     }
@@ -98,12 +130,22 @@ void listQueue(){
 
 int main() {
 
+    getNumUsers("input.txt");
+    Account* listAccounts = (Account*)malloc( numUsers * sizeof(Account) );
+
     initMonitor(); // Initialize synchronization mechanisms if any
-    readAndEnqueueTransactions("input.txt");
+    
+    readAndEnqueueTransactions("input.txt", &listAccounts);
+
+    printf("Accounts:\n");
+    for(int i = 0; i < numUsers; i++){
+        printf("%s\n", listAccounts[i].accountNumber);
+    }
+    
     printUserQueues();
+    
     processAllTransactionsConcurrently();
     //processAllTransactionsConcurrently(); // Process all transactions concurrently
-
 
     return 0;
 

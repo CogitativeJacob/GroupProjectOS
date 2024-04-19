@@ -15,17 +15,17 @@
     
 // }
 
-Account* createAccount(const char* accountNumber, double initialBalance) {
+void createAccount(const char* accountNumber, double initialBalance) {
     printf("Creating file for %s\n", accountNumber);
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
     FILE* file = fopen(filename, "w"); // Create a new file or overwrite an existing one
 
-    Account* account = (Account*) malloc(sizeof(Account));
+    /*Account* account = (Account*) malloc(sizeof(Account));
     if (!account) {
         fprintf(stderr, "Memory allocation failed for account struct\n");
         return NULL;
-    }
+    }*/
 
     if (file) {
         fprintf(file, "%.2f", initialBalance);
@@ -33,17 +33,17 @@ Account* createAccount(const char* accountNumber, double initialBalance) {
         printf("Account file created successfully: %s\n", filename);
 
         // Initialize the account struct
-        strcpy(account->accountNumber, accountNumber);
-        account->balance = initialBalance;
-        pthread_mutex_init(&account->lock, NULL); // Initialize the mutex
-        account->closed = false; // Initially, the account is open
+        //strcpy(account->accountNumber, account->accountNumber);
+        //account->balance = initialBalance;
+        //pthread_mutex_init(&account->lock, NULL); // Initialize the mutex
+        //account->closed = false; // Initially, the account is open
 
-        return account;
+        //return account;
     } else {
         perror("Failed to create account file");
         printf("Failed to create file: %s\n", filename);
-        free(account); // Avoid memory leak if file creation fails
-        return NULL;
+        //free(account); // Avoid memory leak if file creation fails
+        //return NULL;
     }
 }
 
@@ -101,9 +101,11 @@ void closeAccount(const char* accountNumber) {
 
 void processTransaction(const char* accountNumber, const Transaction* transaction) {
     
-    printf("Entered process transaction function");
-
+    printf("Entered process transaction function for account %s and transaction account number %s\n", accountNumber, transaction->accountNumber);
+    
     Account* account = findAccount(accountNumber);
+    
+    /*
     if (account == NULL) {
         if (transaction->transactionType == CREATE) {
             account = createAccount(accountNumber, transaction->amount);
@@ -117,9 +119,9 @@ void processTransaction(const char* accountNumber, const Transaction* transactio
             printf("Account %s does not exist.\n", accountNumber);
             return;
         }
-    }
-
-    printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
+    }*/
+    enterAccount(account);
+    //printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
     
     if(account->closed && transaction->transactionType != CREATE){
         printf("Cannot perform transaction because account is closed.\n");
