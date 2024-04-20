@@ -5,50 +5,47 @@
 #include <stdlib.h>
 #include <string.h>
 
-Account allAccounts[MAX_USERS];
+
+// void initAccount(Account *account, const char *accountNumber, double initialBalance) {
+//     strcpy(account->accountNumber, accountNumber);
+//     account->balance = initialBalance;
+//     printf("Creating account\n");
+//     createAccount(accountNumber, initialBalance);
+//     pthread_mutex_init(&account->lock, NULL);  // Initialize the mutex
+    
+// }
 
 Account* createAccount(const char* accountNumber, double initialBalance) {
-    // Check if the account already exists
-    for (int i = 0; i < userCount; i++) {
-        if (strcmp(allAccounts[i].accountNumber, accountNumber) == 0) {
-            // Account already exists, return a pointer to it
-            return &allAccounts[i];
-        }
-    }
-
-    // If we reached the maximum number of accounts, we cannot create more
-    if (userCount >= MAX_USERS) {
-        fprintf(stderr, "Maximum number of users reached. Cannot create account for %s\n", accountNumber);
-        return NULL;
-    }
-
-    // Create the account file with the initial balance
-    printf("Creating file for %s with initial balance: %.2f\n", accountNumber, initialBalance);
+    printf("Creating file for %s\n", accountNumber);
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
-    FILE* file = fopen(filename, "w");
-    if (!file) {
-        perror("Failed to create account file");
+    FILE* file = fopen(filename, "w"); // Create a new file or overwrite an existing one
+
+    Account* account = (Account*) malloc(sizeof(Account));
+    if (!account) {
+        fprintf(stderr, "Memory allocation failed for account struct\n");
         return NULL;
     }
-    fprintf(file, "%.2f", initialBalance);
-    fclose(file);
-    printf("Account file created successfully: %s\n", filename);
 
-    // Initialize the new Account in the allAccounts array
-    Account* newAccount = &allAccounts[userCount];
-    strcpy(newAccount->accountNumber, accountNumber);
-    newAccount->balance = initialBalance;
-    pthread_mutex_init(&newAccount->lock, NULL);
-    newAccount->closed = false;
+    if (file) {
+        fprintf(file, "%.2f", initialBalance);
+        fclose(file);
+        printf("Account file created successfully: %s\n", filename);
 
-    // Increase the count of active accounts
-    userCount++;
+        // Initialize the account struct
+        strcpy(account->accountNumber, accountNumber);
+        account->balance = initialBalance;
+        pthread_mutex_init(&account->lock, NULL); // Initialize the mutex
+        account->closed = false; // Initially, the account is open
 
-    return newAccount;
+        return account;
+    } else {
+        perror("Failed to create account file");
+        printf("Failed to create file: %s\n", filename);
+        free(account); // Avoid memory leak if file creation fails
+        return NULL;
+    }
 }
-
-
 
 double getAccountBalance(const char* accountNumber) {
     char filename[256];
@@ -83,13 +80,12 @@ void updateAccountBalance(const char* accountNumber, double newBalance) {
 
 Account* findAccount(const char* accountNumber){
     for (int i = 0; i < userCount; i++) {
-        if (strcmp(allAccounts[i].accountNumber, accountNumber) == 0) {
-            return &allAccounts[i];
+        if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
+            return userQueues[i].front->transaction.account;
         }
     }
-    return NULL; // Account number not found
+    return NULL;
 }
-
 
 
 
@@ -104,28 +100,16 @@ void closeAccount(const char* accountNumber) {
 }
 
 void processTransaction(const char* accountNumber, const Transaction* transaction) {
-    
-    //printf("Entered process transaction function for account %s and transaction account number %s\n", accountNumber, transaction->accountNumber);
-    
-    Account* account = findAccount(accountNumber);
-    
-    /*
-    if (account == NULL) {
-        if (transaction->transactionType == CREATE) {
-            account = createAccount(accountNumber, transaction->amount);
-            printf("Created account");
-            enterAccount(account);
-            if (!account) {
-                printf("Failed to create account for %s\n", accountNumber);
-                return;
-            }
-        } else {
-            printf("Account %s does not exist.\n", accountNumber);
-            return;
-        }
-    }*/
-    enterAccount(account);
     //printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
+
+    Account* account = findAccount(accountNumber);
+    if (account != NULL) {
+        enterAccount(account);
+    } else if (account == NULL && transaction->transactionType == CREATE) {
+        account->closed = false;
+        Account* account = createAccount(accountNumber, transaction->amount);
+    }
+    enterAccount(account);
     
     if(account->closed && transaction->transactionType != CREATE){
         printf("Cannot perform transaction because account is closed.\n");

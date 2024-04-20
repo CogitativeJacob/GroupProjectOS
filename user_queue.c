@@ -1,100 +1,101 @@
-/*
-* Group G
-* Jacob Hathaway
-* jacob.q.hathaway@okstate.edu
-* 4/7/2024
-*/
-
 #include "user_queue.h"
-#include <string.h>
-#include <stdlib.h>
 #include "transactions.h"
 #include <stdio.h>
-#include "utils.h"
+#include <string.h>
+#include <stdlib.h>
 
-// user_queue.c
-UserQueue userQueues[MAX_USERS];
+TransactionQueue userQueues[MAX_USERS];
+
+
 int userCount = 0;
-
-
-// Finds or creates a queue for the specified account number
-UserQueue* findOrCreateUserQueue(const char* accountNumber) {
-    // For simplicity, this example searches for an existing queue or creates a new one at the end
+// Modified to only handle the enqueueing of a Transaction.
+void enqueueTransaction(const char* accountNumber, Transaction transaction) {
+    int found = -1;
     for (int i = 0; i < userCount; i++) {
-        if (strcmp(userQueues[i].front->accountNumber, accountNumber) == 0) {
-            return &userQueues[i];
+        if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
+            found = i;
+            break;
         }
     }
-    // If not found, initialize a new queue
-    if (userCount < MAX_USERS) {
-        UserQueue* newQueue = &userQueues[userCount++];
-        newQueue->front = NULL;
-        newQueue->rear = NULL;
-        return newQueue;
-    }
-    return NULL; // In a real application, handle this case properly
-}
 
-void enqueueTransaction(const char* accountNumber, Transaction* transaction) {
-    UserQueue* queue = findOrCreateUserQueue(accountNumber);
-    if (!queue) return; // Handle error or full array
+    printf("enqueueTransaction making account for accountNum: %s Transaction accountNum: %s, Transtype: %s\n",
+           accountNumber, transaction.accountNumber, getTransactionTypeString(transaction.transactionType));
 
-    transaction->next = NULL;
-    if (queue->rear == NULL) {
-        // Empty queue
-        queue->front = queue->rear = transaction;
+    TransactionQueue* queue;
+    if (found == -1) {
+        if (userCount >= MAX_USERS) {
+            fprintf(stderr, "Maximum number of users reached.\n");
+            return;
+        }
+        queue = &userQueues[userCount++];
+        strcpy(queue->accountNumber, accountNumber);
+        queue->front = queue->rear = NULL;
     } else {
-        // Add to the end and update rear
-        queue->rear->next = transaction;
-        queue->rear = transaction;
+        queue = &userQueues[found];
     }
+
+    QueueNode* newNode = (QueueNode*)malloc(sizeof(QueueNode));
+    if (!newNode) {
+        fprintf(stderr, "Memory allocation failed for new transaction node.\n");
+        return;
+    }
+    newNode->transaction = transaction;
+    newNode->next = NULL;
+
+    if (queue->rear == NULL) {
+        queue->front = queue->rear = newNode;
+    } else {
+        queue->rear->next = newNode;
+        queue->rear = newNode;
+    }
+
+    printf("Enqueued transaction for %s: Type %s, Amount %.2f\n", 
+           transaction.accountNumber, 
+           getTransactionTypeString(transaction.transactionType), 
+           transaction.amount);
 }
 
-// Assuming this is in user_queue.c or a similar source file
 
 Transaction* dequeueTransaction(const char* accountNumber) {
-    // Your logic to find the user's queue goes here
-    // For simplicity, let's assume you find the queue and it's not empty
+    //printf("Prepping to dequeue transaction for %s\n", accountNumber);
+    for (int i = 0; i < userCount; i++) {
+        if (strcmp(userQueues[i].accountNumber, accountNumber) == 0) {
+            if (userQueues[i].front == NULL) {
+                return NULL;  // No transactions to dequeue
+            }
 
-    UserQueue* queue = findOrCreateUserQueue(accountNumber);
-    printf("Dequeuing transaction for account: %s\n", accountNumber);
+            QueueNode *node = userQueues[i].front;
+            Transaction* transaction = malloc(sizeof(Transaction));
+            if (transaction == NULL) {
+                fprintf(stderr, "Memory allocation failed for transaction.\n");
+                return NULL;
+            }
+            *transaction = node->transaction;
 
+            userQueues[i].front = node->next;
+            if (userQueues[i].front == NULL) {
+                userQueues[i].rear = NULL;  // The queue is empty now
+            }
 
-    if (queue != NULL && queue->front != NULL) {
-        Transaction* transaction = queue->front;
-        queue->front = queue->front->next;
-        if (queue->front == NULL) {
-            queue->rear = NULL; // If the queue is now empty, update the rear pointer
+            free(node);
+            printf("Dequeued transaction: %d for %s.\n", transaction->transactionType, transaction->accountNumber);
+            return transaction;
         }
-        //printf("Dequeued transaction: %s, %.2f\n", transaction->accountNumber, transaction->amount);
-        return transaction;
     }
-    return NULL; // If the queue is empty or not found
-}
-
-// Helper function to get a string representation of the transaction type
-const char* getTransactionTypeString(transType type) {
-    switch (type) {
-        case CREATE: return "CREATE";
-        case DEPOSIT: return "DEPOSIT";
-        case WITHDRAW: return "WITHDRAW";
-        case INQUIRY: return "INQUIRY";
-        case TRANSFER: return "TRANSFER";
-        case CLOSE: return "CLOSE";
-        default: return "UNKNOWN";
-    }
+    return NULL;  // Account number not found
 }
 
 void printUserQueues() {
-    printf("Printing all user queues and their transactions:\n");
-    for (int i = 0; i < numUniqueUsers; i++) {
-        printf("User: %s\n", uniqueUsers[i]);
-        UserQueue* queue = &userQueues[i];
-        Transaction* transaction = queue->front;
-        while (transaction != NULL) {
+    printf("Current user queues and their transactions:\n");
+    for (int i = 0; i < userCount; i++) {
+        printf("User: %s\n", userQueues[i].accountNumber);
+        QueueNode* node = userQueues[i].front;
+        while (node != NULL) {
             printf("\tTransaction Type: %s, Amount: %.2f\n",
-                   getTransactionTypeString(transaction->transactionType), transaction->amount);
-            transaction = transaction->next;
+                   getTransactionTypeString(node->transaction.transactionType), 
+                   node->transaction.amount);
+            node = node->next;
         }
     }
 }
+

@@ -1,38 +1,39 @@
-/*
-* Group G
-* Abhiram Reddy Alugula
-* aalugul@okstate.edu
-* 4/7/2024
-*/
-
 #ifndef TRANSACTIONS_H
 #define TRANSACTIONS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <sys/file.h>
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#include <time.h>
-
-#define SHM_KEY 0x1234
-#define MAX_TRANSACTIONS 10
-
-typedef enum {
-    CREATE, DEPOSIT, WITHDRAW, INQUIRY, TRANSFER, CLOSE, FAILED
-} TransactionType;
+#include <pthread.h>
+#include <stdbool.h>
 
 typedef struct {
-    TransactionType type;
     char accountNumber[20];
+    double balance;
+    pthread_mutex_t lock;
+    bool closed;     //check if account is still open
+} Account;
+
+typedef enum {
+    CREATE, DEPOSIT, WITHDRAW, INQUIRY, TRANSFER, CLOSE
+} transType;
+
+typedef struct {
+    transType transactionType;
+    char accountNumber[20];
+    Account* account; //keeps accounts
     double amount;
-    char recipientAccountNumber[20]; // Used for transfers
-    char status[8]; // "success" or "failed"
-    char timestamp[20]; // Storing timestamp as string
-    int processed; // Flag to indicate if processed (1 = yes, 0 = no)
-} SharedTransaction;
+    char recipientAccountNumber[20]; // Only used for TRANSFER
+    char timestamp[20];
+} Transaction;
+
+// In transactions.h
+Account* createAccount(const char* accountNumber, double initialBalance);
+double getAccountBalance(const char* accountNumber);
+void updateAccountBalance(const char* accountNumber, double newBalance);
+void closeAccount(const char* accountNumber);
+
+const char* getTransactionTypeString(transType type);  // Declaration
+
+void initAccount(Account *account, const char *accountNumber, double initialBalance);
+void processTransaction(const char* accountNumber, const Transaction *transaction);
+Account* findAccount(const char* accountNumber);
 
 #endif

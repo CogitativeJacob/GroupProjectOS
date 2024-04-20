@@ -1,76 +1,154 @@
-/*
-* Group G
-* Jacob Hathaway
-* jacob.q.hathaway@okstate.edu
-* 4/7/2024
-*/
-
-#include "transactions.h"
 #include "synchronization.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include "utils.h"
+#include "transactions.h"
+#include "user_queue.h"
 #include <pthread.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+int numUsers;
+
+transType parseTransactionType(const char* typeStr) {
+    if (strcmp(typeStr, "Create") == 0) return CREATE;
+    if (strcmp(typeStr, "Deposit") == 0) return DEPOSIT;
+    if (strcmp(typeStr, "Withdraw") == 0) return WITHDRAW;
+    if (strcmp(typeStr, "Inquiry") == 0) return INQUIRY;
+    if (strcmp(typeStr, "Transfer") == 0) return TRANSFER;
+    if (strcmp(typeStr, "Close") == 0) return CLOSE;
+    //return UNKNOWN;
+}
+
+void getNumUsers(const char* filename){
+    FILE* file = fopen(filename, "r");
+    char line[20];
+    if (!file) {
+        perror("Failed to open transactions file");
+        return;
+    }
+
+    fgets(line, sizeof(line), file);
+
+    fscanf(file, "%d", &numUsers);  // Read the number of users
+
+    fclose(file);
+}
+
+void readAndEnqueueTransactions(const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (!file) {
+        perror("Failed to open transactions file");
+        return;
+    }
+
+    char line[256];
+    // Skip the first line that contains the number of users
+    fgets(line, sizeof(line), file);
+
+    while (fgets(line, sizeof(line), file)) {
+        char accountNumber[20], transTypeStr[20], recipientAccountNumber[20] = {0};
+        double amount;
+        int scanCount = sscanf(line, "%s %s %lf %s", accountNumber, transTypeStr, &amount, recipientAccountNumber);
+
+        if (scanCount < 2) {
+            fprintf(stderr, "Incorrect format in transactions file.\n");
+            continue;
+        }
+
+        Transaction transaction;
+        memset(&transaction, 0, sizeof(Transaction)); // Clear the transaction structure
+        strcpy(transaction.accountNumber, accountNumber);
+        transaction.transactionType = parseTransactionType(transTypeStr);
+        transaction.amount = (scanCount >= 3) ? amount : 0.0; // Set amount if present
+
+        Account* account = NULL;
+        if (transaction.transactionType == CREATE) {
+            account = createAccount(accountNumber, transaction.amount); // Create account for CREATE transactions
+        } else {
+            account = findAccount(accountNumber); // For other transactions, find existing account
+        }
+
+        if (!account) {
+            fprintf(stderr, "No account found or created for %s\n", accountNumber);
+            continue; // Skip this transaction if no account is found or created
+        }
+
+        // Link the transaction to the account
+        transaction.account = account;
+
+        // Enqueue the transaction
+        enqueueTransaction(accountNumber, transaction);
+    }
+
+    fclose(file);
+}
 
 
-MonitorQueue mq = {.front = NULL, .rear = NULL, .lock0 = PTHREAD_MUTEX_INITIALIZER, .lock1 = PTHREAD_MUTEX_INITIALIZER,
- .lock2 = PTHREAD_MUTEX_INITIALIZER, .lock3 = PTHREAD_MUTEX_INITIALIZER, .lock4 = PTHREAD_MUTEX_INITIALIZER,
- .lock5 = PTHREAD_MUTEX_INITIALIZER, .MQlock = PTHREAD_MUTEX_INITIALIZER, .cond = PTHREAD_COND_INITIALIZER};
 
-void processUserTransactions(const char* accountNumber) { //Not fully finished yet (waiting for monitor development)
-    // Assuming transactions for this user have been enqueued
-    // This function simulates processing those transactions in a separate process
-    //printf("Processing transactions for account: %s\n", accountNumber);
-    Transaction* transaction;
-    while ((transaction = dequeueTransaction(accountNumber)) != NULL) {
-        //enterMonitor(&mq, transaction); // Synchronize access
-        printf("Processed transaction for %s: Type %d, Amount %.2f\n",
-               accountNumber, transaction->transactionType, transaction->amount);
-        //exitMonitor(&mq);
-        free(transaction); // Assume dynamically allocated
+
+void* threadProcessTransactions(void* arg) {
+    TransactionQueue* queue = (TransactionQueue*) arg;
+    if (queue == NULL) {
+        fprintf(stderr, "Error: Queue pointer is NULL.\n");
+        return NULL;
+    }
+
+    //printf("Processing queue for account: %s\n", queue->accountNumber ? queue->accountNumber : "NULL");
+
+    Transaction* transaction = dequeueTransaction(queue->accountNumber);
+    while (transaction != NULL) {
+        if (transaction->account == NULL) {
+            fprintf(stderr, "Error: Account pointer is NULL for transaction.\n");
+        } else {
+            /*printf("Processing transaction for account: %s of type: %s\n",
+                transaction->account->accountNumber ? transaction->account->accountNumber : "NULL",
+                getTransactionTypeString(transaction->transactionType)); */
+
+            processTransaction(transaction->accountNumber, transaction);
+        }
+        free(transaction);
+        transaction = dequeueTransaction(queue->accountNumber);
+    }
+    return NULL;
+}
+
+
+void processAllTransactionsConcurrently() {
+    pthread_t threads[userCount];
+    for (int i = 0; i < userCount; i++) {
+        //printf("%s\n", userQueues[i].accountNumber); //Debug print
+        pthread_create(&threads[i], NULL, threadProcessTransactions, &userQueues[i]);
+    }
+    for (int i = 0; i < userCount; i++) {
+        pthread_join(threads[i], NULL);
     }
 }
+
+//was used for testing
+void listQueue(){
+    TransactionQueue* queue = &userQueues[0];
+    Transaction* transaction = dequeueTransaction(queue->accountNumber);
+    while (transaction != NULL) {
+        transaction = dequeueTransaction(queue->accountNumber);
+    }
+}
+
 
 
 int main() {
-    //Test transactions for monitor implementation
-    Transaction transaction[] = {
-    {DEPOSIT, "123456789", 100.0, "2023-03-26"},
-    {DEPOSIT, "123456789", 50.0, "2023-03-27"},
-    {INQUIRY, "123456789", 0, "2023-03-28"},
-    {TRANSFER, "123456789", 100.0, "2023-03-29"}};
 
-    parseAndEnqueueTransactions("/home/burger/Desktop/GroupProjectOS/input.txt");
+    getNumUsers("input.txt");
+    Account* listAccounts = (Account*)malloc( numUsers * sizeof(Account) );
+
+    initMonitor(); // Initialize synchronization mechanisms if any
+    
+    readAndEnqueueTransactions("input.txt");
+    
     printUserQueues();
     
-    //Testing user queues
-    for (int i = 0; i < numUniqueUsers; i++) {
-        pid_t pid = fork();
-        if (pid == 0) { // Child process
-            //printf(uniqueUsers[i]);
-            processUserTransactions(uniqueUsers[i]);
-            exit(0);
-        }
-    }
-
-    //Using Monitor
-    pid_t pid;
-    for (int i = 0; i < 4; i++) { // Simulate 5 concurrent transactions
-        pid = fork();
-        if (pid == 0) { // Child process
-
-            // for threads with multiple transactions we will loop the following
-            // two lines for each one
-            enterMonitor(&mq, &transaction[i]); // enter queue for monitor
-            printf("Transaction %s entered monitor\n", transaction[i].accountNumber);
-            exitMonitor(&mq); // exit queue for monitor
-            return 0;
-        }
-    }
-
-    while (wait(NULL) > 0); // Wait for all child processes to finish
+    processAllTransactionsConcurrently();
+    //processAllTransactionsConcurrently(); // Process all transactions concurrently
 
     return 0;
+
 }
+
