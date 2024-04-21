@@ -15,6 +15,7 @@ typedef struct TransactionQueue {
     char accountNumber[20];  // To identify the queue by account number
     QueueNode* front;        // Pointer to the front of the queue
     QueueNode* rear;         // Pointer to the rear of the queue
+    int isActive;
 } TransactionQueue;
 
 extern TransactionQueue userQueues[MAX_USERS];  // Array of transaction queues

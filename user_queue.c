@@ -18,8 +18,8 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
         }
     }
 
-    printf("enqueueTransaction making account for accountNum: %s Transaction accountNum: %s, Transtype: %s\n",
-           accountNumber, transaction.accountNumber, getTransactionTypeString(transaction.transactionType));
+    /*printf("enqueueTransaction making account for accountNum: %s Transaction accountNum: %s, Transtype: %s\n",
+           accountNumber, transaction.accountNumber, getTransactionTypeString(transaction.transactionType)); */
 
     TransactionQueue* queue;
     if (found == -1) {
@@ -27,12 +27,20 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
             fprintf(stderr, "Maximum number of users reached.\n");
             return;
         }
-        queue = &userQueues[userCount++];
+
+        // Initialize the new queue
+        queue = &userQueues[userCount]; // Use the current count for the index
         strcpy(queue->accountNumber, accountNumber);
         queue->front = queue->rear = NULL;
+        
+        // Increment userCount after the new queue is initialized
+        userCount++; // This is where we increment userCount, after the queue setup is complete
+        printf("New queue added, userCount incremented to: %d\n", userCount);
+        queue->isActive = 1;
     } else {
         queue = &userQueues[found];
     }
+
 
     QueueNode* newNode = (QueueNode*)malloc(sizeof(QueueNode));
     if (!newNode) {
@@ -49,10 +57,12 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
         queue->rear = newNode;
     }
 
-    printf("Enqueued transaction for %s: Type %s, Amount %.2f\n", 
+    //printf("User count after enqueueing transaction for %s: %d\n", accountNumber, userCount);
+
+    /*printf("Enqueued transaction for %s: Type %s, Amount %.2f\n", 
            transaction.accountNumber, 
            getTransactionTypeString(transaction.transactionType), 
-           transaction.amount);
+           transaction.amount); */
 }
 
 
@@ -88,14 +98,24 @@ Transaction* dequeueTransaction(const char* accountNumber) {
 void printUserQueues() {
     printf("Current user queues and their transactions:\n");
     for (int i = 0; i < userCount; i++) {
+        if (!userQueues[i].isActive) {
+            continue; // Skip inactive users
+        }
+
         printf("User: %s\n", userQueues[i].accountNumber);
         QueueNode* node = userQueues[i].front;
         while (node != NULL) {
-            printf("\tTransaction Type: %s, Amount: %.2f\n",
-                   getTransactionTypeString(node->transaction.transactionType), 
-                   node->transaction.amount);
+            const char* transTypeStr = getTransactionTypeString(node->transaction.transactionType);
+            if ((node->transaction.amount == 0.0) && 
+                (strcmp(transTypeStr, "INQUIRY") == 0 || strcmp(transTypeStr, "CLOSE") == 0)) {
+                printf("\tTransaction Type: %s\n", transTypeStr);
+            } else {
+                printf("\tTransaction Type: %s, Amount: %.2f\n", transTypeStr, node->transaction.amount);
+            }
             node = node->next;
         }
     }
 }
+
+
 

@@ -31,7 +31,10 @@ void getNumUsers(const char* filename){
     fscanf(file, "%d", &numUsers);  // Read the number of users
 
     fclose(file);
+
+    printf("Num Users: %d\n", numUsers);
 }
+
 
 void readAndEnqueueTransactions(const char* filename) {
     FILE* file = fopen(filename, "r");
@@ -46,37 +49,64 @@ void readAndEnqueueTransactions(const char* filename) {
 
     while (fgets(line, sizeof(line), file)) {
         char accountNumber[20], transTypeStr[20], recipientAccountNumber[20] = {0};
-        double amount;
+        double amount = 0.0;
         int scanCount = sscanf(line, "%s %s %lf %s", accountNumber, transTypeStr, &amount, recipientAccountNumber);
 
-        if (scanCount < 2) {
-            fprintf(stderr, "Incorrect format in transactions file.\n");
-            continue;
-        }
+        // Skip lines with incorrect format
+
+        printf("Scancount: %d Transaction: %s, %s\n", scanCount, accountNumber, transTypeStr);
 
         Transaction transaction;
         memset(&transaction, 0, sizeof(Transaction)); // Clear the transaction structure
         strcpy(transaction.accountNumber, accountNumber);
         transaction.transactionType = parseTransactionType(transTypeStr);
-        transaction.amount = (scanCount >= 3) ? amount : 0.0; // Set amount if present
+        transaction.amount = amount;
 
-        Account* account = NULL;
-        if (transaction.transactionType == CREATE) {
-            account = createAccount(accountNumber, transaction.amount); // Create account for CREATE transactions
-        } else {
-            account = findAccount(accountNumber); // For other transactions, find existing account
+        // Set recipientAccountNumber for transfer transactions
+        if (transaction.transactionType == TRANSFER) {
+            if (scanCount == 4) {
+                strcpy(transaction.recipientAccountNumber, recipientAccountNumber);
+            } else {
+                fprintf(stderr, "Missing recipient account number for transfer transaction.\n");
+                continue;
+            }
         }
+
+        Account* account = (transaction.transactionType == CREATE) ? 
+            createAccount(accountNumber, transaction.amount) : 
+            findAccount(accountNumber);
 
         if (!account) {
-            fprintf(stderr, "No account found or created for %s\n", accountNumber);
-            continue; // Skip this transaction if no account is found or created
+            switch (transaction.transactionType) {
+                case DEPOSIT:
+                    printf("Deposit failed because account %s does not exist.\n", transaction.accountNumber);
+                    break;
+                case WITHDRAW:
+                    printf("Withdraw failed because account %s does not exist.\n", transaction.accountNumber);
+                    break;
+                case INQUIRY:
+                    printf("Inquiry failed because account %s does not exist.\n", transaction.accountNumber);
+                    break;
+                case TRANSFER:
+                    printf("Transfer failed because account %s does not exist.\n", transaction.accountNumber);
+                    break;
+                case CLOSE:
+                    printf("Close failed because account %s does not exist.\n", transaction.accountNumber);
+                    break;
+            }
+            continue;
         }
 
-        // Link the transaction to the account
+        // Link the transaction to the account and enqueue it
         transaction.account = account;
-
-        // Enqueue the transaction
         enqueueTransaction(accountNumber, transaction);
+
+        // Debugging output
+        printf("Transaction parsed: %s, %s, %.2f, %s\n",
+               transaction.accountNumber,
+               getTransactionTypeString(transaction.transactionType),
+               transaction.amount,
+               transaction.recipientAccountNumber[0] ? transaction.recipientAccountNumber : "N/A");
     }
 
     fclose(file);
@@ -108,6 +138,9 @@ void* threadProcessTransactions(void* arg) {
         free(transaction);
         transaction = dequeueTransaction(queue->accountNumber);
     }
+
+    queue->isActive = 0;
+
     return NULL;
 }
 
@@ -117,6 +150,7 @@ void processAllTransactionsConcurrently() {
     for (int i = 0; i < userCount; i++) {
         //printf("%s\n", userQueues[i].accountNumber); //Debug print
         pthread_create(&threads[i], NULL, threadProcessTransactions, &userQueues[i]);
+        printf("Made thread for userCount %d\n", userCount);
     }
     for (int i = 0; i < userCount; i++) {
         pthread_join(threads[i], NULL);
@@ -146,6 +180,8 @@ int main() {
     printUserQueues();
     
     processAllTransactionsConcurrently();
+
+    printUserQueues();
     //processAllTransactionsConcurrently(); // Process all transactions concurrently
 
     return 0;

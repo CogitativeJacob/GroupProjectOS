@@ -15,7 +15,5 @@ void enterAccount(Account *account);
 void exitAccount(Account *account);
 
 void initMonitor();             // Function to initialize the monitor
-void enterMonitor(Transaction* transaction);
-void leaveMonitor();
 
 #endif
