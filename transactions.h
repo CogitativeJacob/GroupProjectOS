@@ -8,6 +8,7 @@ typedef struct {
     char accountNumber[20];
     double balance;
     pthread_mutex_t lock;
+    pthread_cond_t cond;
     bool closed;     //check if account is still open
 } Account;
 

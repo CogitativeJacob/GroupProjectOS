@@ -17,5 +17,6 @@ void enterAccount(Account *account) {
 
 void exitAccount(Account *account) {
     pthread_mutex_unlock(&account->lock);  // Unlock the specific account
+    pthread_cond_signal(&account->cond);
     printf("Exited account: %s\n", account->accountNumber);
 }

@@ -43,6 +43,7 @@ Account* createAccount(const char* accountNumber, double initialBalance) {
     strcpy(newAccount->accountNumber, accountNumber);
     newAccount->balance = initialBalance;
     pthread_mutex_init(&newAccount->lock, NULL);
+    pthread_cond_init(&newAccount->cond, NULL);
     newAccount->closed = false;
 
     // Increase the count of active accounts
@@ -162,6 +163,16 @@ void processTransaction(const char* accountNumber, const Transaction* transactio
                 printf("Cannot transfer $%.2f from %s to %s because recieving account does not exist.\n", transaction->amount, transaction->accountNumber, transaction->recipientAccountNumber);
                 break;
             }
+
+            //check if account was closed
+            if(reciever->closed){
+                printf("Cannot transfer $%.2f from %s to %s because recieving account was closed.\n", transaction->amount, transaction->accountNumber, transaction->recipientAccountNumber);
+                break;
+            }else{
+                //prevent deadlock
+                pthread_cond_wait(&reciever->cond, &account->lock);
+            }
+
             //enter recipient account
             enterAccount(reciever);
             //check if account was closed
