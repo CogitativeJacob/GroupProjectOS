@@ -18,9 +18,6 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
         }
     }
 
-    /*printf("enqueueTransaction making account for accountNum: %s Transaction accountNum: %s, Transtype: %s\n",
-           accountNumber, transaction.accountNumber, getTransactionTypeString(transaction.transactionType)); */
-
     TransactionQueue* queue;
     if (found == -1) {
         if (userCount >= MAX_USERS) {
@@ -56,13 +53,6 @@ void enqueueTransaction(const char* accountNumber, Transaction transaction) {
         queue->rear->next = newNode;
         queue->rear = newNode;
     }
-
-    //printf("User count after enqueueing transaction for %s: %d\n", accountNumber, userCount);
-
-    /*printf("Enqueued transaction for %s: Type %s, Amount %.2f\n", 
-           transaction.accountNumber, 
-           getTransactionTypeString(transaction.transactionType), 
-           transaction.amount); */
 }
 
 
@@ -88,7 +78,7 @@ Transaction* dequeueTransaction(const char* accountNumber) {
             }
 
             free(node);
-            printf("Dequeued transaction: %d for %s.\n", transaction->transactionType, transaction->accountNumber);
+            //printf("Dequeued transaction: %d for %s.\n", transaction->transactionType, transaction->accountNumber);
             return transaction;
         }
     }

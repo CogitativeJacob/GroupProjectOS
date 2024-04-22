@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "transactions.h": "c",
+        "synchronization.h": "c",
+        "user_queue.h": "c"
+    }
+}

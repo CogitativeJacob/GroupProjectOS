@@ -12,11 +12,11 @@ void initMonitor() {
 
 void enterAccount(Account *account) {
     pthread_mutex_lock(&account->lock);  // Lock the specific account
-    printf("Entered account: %s\n", account->accountNumber);
+    //printf("Entered account: %s\n", account->accountNumber);
 }
 
 void exitAccount(Account *account) {
     pthread_mutex_unlock(&account->lock);  // Unlock the specific account
     pthread_cond_signal(&account->cond);
-    printf("Exited account: %s\n", account->accountNumber);
+    //printf("Exited account: %s\n", account->accountNumber);
 }

@@ -10,7 +10,7 @@ Account allAccounts[MAX_USERS];
 Account* createAccount(const char* accountNumber, double initialBalance) {
     // Check if the account already exists
 
-    printf("CreateAccount called for %s\n", accountNumber);
+    //printf("CreateAccount called for %s\n", accountNumber);
 
     for (int i = 0; i < userCount; i++) {
         if (strcmp(allAccounts[i].accountNumber, accountNumber) == 0) {
@@ -36,7 +36,7 @@ Account* createAccount(const char* accountNumber, double initialBalance) {
     }
     fprintf(file, "%.2f", initialBalance);
     fclose(file);
-    printf("Account file created successfully: %s\n", filename);
+    //printf("Account file created successfully: %s\n", filename);
 
     // Initialize the new Account in the allAccounts array
     Account* newAccount = &allAccounts[userCount];
@@ -45,12 +45,6 @@ Account* createAccount(const char* accountNumber, double initialBalance) {
     pthread_mutex_init(&newAccount->lock, NULL);
     pthread_cond_init(&newAccount->cond, NULL);
     newAccount->closed = false;
-
-    // Increase the count of active accounts
-    if (newAccount) {
-        //userCount++;
-        //printf("usercount incremented: %d\n", userCount);
-    }
 
     return newAccount;
 }
@@ -89,7 +83,7 @@ void updateAccountBalance(const char* accountNumber, double newBalance) {
 }
 
 Account* findAccount(const char* accountNumber){
-    printf("FindAccount called, usercount: %d\n", userCount);
+    //printf("FindAccount called, usercount: %d\n", userCount);
     for (int i = 0; i < userCount; i++) {
         if (strcmp(allAccounts[i].accountNumber, accountNumber) == 0) {
             return &allAccounts[i];
@@ -102,35 +96,27 @@ Account* findAccount(const char* accountNumber){
 
 
 void closeAccount(const char* accountNumber) {
-    printf("Closing the account.\n");
+    //printf("Closing the account.\n");
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
-    printf("%s\n", filename);
+    //printf("%s\n", filename);
     if (remove(filename) != 0) {
         perror("Failed to close account");
     }
 }
 
 void processTransaction(const char* accountNumber, const Transaction* transaction) {
-    
-    //printf("Entered process transaction function for account %s and transaction account number %s\n", accountNumber, transaction->accountNumber);
-    
+
     Account* account = findAccount(accountNumber);
 
     enterAccount(account);
-    //enter shared memory mutex to log transaction
-
-    //printf("Entered account %s and processing type %d\n", transaction->accountNumber, transaction->transactionType); //Debug print
-
-    //If account is null and transaction type is not create throw error saying account doesn't exist
-    //Might need to do that before the enterAccount function (I'm not sure how that is even working)
     
     if(account->closed && transaction->transactionType != CREATE){
         printf("Cannot perform transaction because account %s is closed.\n", account->accountNumber);
         exitAccount(account);
         return;
     }
-    printf("Closed: %d, Transaction: %d\n", account->closed, transaction->transactionType); //Debug print
+    //printf("Closed: %d, Transaction: %d\n", account->closed, transaction->transactionType); //Debug print
     
 
     switch (transaction->transactionType) {
@@ -156,7 +142,7 @@ void processTransaction(const char* accountNumber, const Transaction* transactio
             break;
         case TRANSFER:
             //check recipient exists
-            printf("Recipient account number for transfer: %s\n", transaction->recipientAccountNumber);
+            //printf("Recipient account number for transfer: %s\n", transaction->recipientAccountNumber);
             Account* reciever = findAccount(transaction->recipientAccountNumber);
             //printf("Account: %s transferring to account: %s\n", transaction->accountNumber, reciever->accountNumber);
             if(reciever == NULL){
