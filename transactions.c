@@ -1,3 +1,10 @@
+/*
+* Group G
+* Jacob Hathaway
+* jacob.q.hathaway@okstate.edu
+* 4/21/2024
+*/
+
 #include "transactions.h"
 #include "synchronization.h"
 #include "user_queue.h"
@@ -5,8 +12,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-Account allAccounts[MAX_USERS];
+Account allAccounts[MAX_USERS]; // Global array to hold all account structures
 
+/**
+ * Creates a new account or returns an existing one if it already exists.
+ * @param accountNumber Unique identifier for the account.
+ * @param initialBalance Initial monetary value to set the account to upon creation.
+ * @return Pointer to the Account structure, or NULL if creation failed due to reaching capacity.
+ */
 Account* createAccount(const char* accountNumber, double initialBalance) {
     // Check if the account already exists
 
@@ -50,7 +63,11 @@ Account* createAccount(const char* accountNumber, double initialBalance) {
 }
 
 
-
+/**
+ * Retrieves the balance of a specified account.
+ * @param accountNumber The account identifier.
+ * @return The balance of the account, or -1 if the account file cannot be opened.
+ */
 double getAccountBalance(const char* accountNumber) {
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
@@ -69,6 +86,11 @@ double getAccountBalance(const char* accountNumber) {
     return balance;
 }
 
+/**
+ * Updates the balance of a specified account.
+ * @param accountNumber The account identifier.
+ * @param newBalance The new balance to set.
+ */
 void updateAccountBalance(const char* accountNumber, double newBalance) {
     char filename[256];
     sprintf(filename, "%s.txt", accountNumber);
@@ -82,6 +104,11 @@ void updateAccountBalance(const char* accountNumber, double newBalance) {
     }
 }
 
+/**
+ * Searches for an account by its number.
+ * @param accountNumber The account identifier to search for.
+ * @return Pointer to the Account if found, NULL otherwise.
+ */
 Account* findAccount(const char* accountNumber){
     //printf("FindAccount called, usercount: %d\n", userCount);
     for (int i = 0; i < userCount; i++) {
@@ -94,7 +121,10 @@ Account* findAccount(const char* accountNumber){
 
 
 
-
+/**
+ * Closes an account by deleting its file.
+ * @param accountNumber The account identifier.
+ */
 void closeAccount(const char* accountNumber) {
     //printf("Closing the account.\n");
     char filename[256];
@@ -105,6 +135,11 @@ void closeAccount(const char* accountNumber) {
     }
 }
 
+/**
+ * Processes a transaction for a specified account.
+ * @param accountNumber The account to process the transaction for.
+ * @param transaction A pointer to the Transaction structure containing details about the transaction.
+ */
 void processTransaction(const char* accountNumber, const Transaction* transaction) {
 
     Account* account = findAccount(accountNumber);
@@ -195,6 +230,11 @@ void processTransaction(const char* accountNumber, const Transaction* transactio
     exitAccount(account);
 }
 
+/**
+ * Converts a transaction type enum to its string representation.
+ * @param type The transaction type enum.
+ * @return The string representation of the transaction type.
+ */
 const char* getTransactionTypeString(transType type) {
     switch (type) {
         case CREATE: return "CREATE";

@@ -1,3 +1,8 @@
+/*
+* Group G
+* 4/21/2024
+*/
+
 #include "synchronization.h"
 #include "transactions.h"
 #include "user_queue.h"
@@ -9,6 +14,11 @@
 
 TransactionLog transactionLog;
 
+/**
+ * Parses a transaction type from a given string.
+ * @param typeStr A string representing the transaction type.
+ * @return The corresponding transType enum value for the given string.
+ */
 transType parseTransactionType(const char* typeStr) {
     if (strcmp(typeStr, "Create") == 0) return CREATE;
     if (strcmp(typeStr, "Deposit") == 0) return DEPOSIT;
@@ -19,6 +29,10 @@ transType parseTransactionType(const char* typeStr) {
     //return UNKNOWN;
 }
 
+/**
+ * Reads transactions from a file and enqueues them for processing.
+ * @param filename The name of the file containing transaction data.
+ */
 void readAndEnqueueTransactions(const char* filename) {
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -35,7 +49,8 @@ void readAndEnqueueTransactions(const char* filename) {
         double amount = 0.0;
         int scanCount = sscanf(line, "%s %s %lf %s", accountNumber, transTypeStr, &amount, recipientAccountNumber);
 
-        Transaction transaction;
+        //Sets transaction object up with the basic information.
+        Transaction transaction; 
         memset(&transaction, 0, sizeof(Transaction)); // Clear the transaction structure
         strcpy(transaction.accountNumber, accountNumber);
         transaction.transactionType = parseTransactionType(transTypeStr);
@@ -51,11 +66,12 @@ void readAndEnqueueTransactions(const char* filename) {
             }
         }
 
+        //creates account if transtype is create, otherwise finds account.
         Account* account = (transaction.transactionType == CREATE) ? 
             createAccount(accountNumber, transaction.amount) : 
             findAccount(accountNumber);
 
-        if (!account) {
+        if (!account) { //Handles failures due to account nonexistence. Also writes to temp buffer to write to log.
             char temp[80];
             switch (transaction.transactionType) {
                 case DEPOSIT:
@@ -94,7 +110,11 @@ void readAndEnqueueTransactions(const char* filename) {
     fclose(file);
 }
 
-
+/**
+ * Thread function to process transactions for a specific account.
+ * @param arg A pointer to the TransactionQueue for the account.
+ * @return NULL upon completion of transaction processing.
+ */
 void* threadProcessTransactions(void* arg) {
     TransactionQueue* queue = (TransactionQueue*) arg;
     if (queue == NULL) {
@@ -104,7 +124,7 @@ void* threadProcessTransactions(void* arg) {
 
     //printf("Processing queue for account: %s\n", queue->accountNumber ? queue->accountNumber : "NULL");
 
-    Transaction* transaction = dequeueTransaction(queue->accountNumber);
+    Transaction* transaction = dequeueTransaction(queue->accountNumber); //Grabs transaction from queue.
     while (transaction != NULL) {
         if (transaction->account == NULL) {
             fprintf(stderr, "Error: Account pointer is NULL for transaction.\n");
@@ -113,7 +133,7 @@ void* threadProcessTransactions(void* arg) {
             processTransaction(transaction->accountNumber, transaction);
 
             char temp[80];
-            switch (transaction->transactionType) {
+            switch (transaction->transactionType) { //Writes successes to temp to write to log
                 case CREATE:
                     sprintf(temp, "%s %s %.2f success", getTransactionTypeString(transaction->transactionType), transaction->accountNumber, transaction->amount);
                     break;
@@ -145,6 +165,9 @@ void* threadProcessTransactions(void* arg) {
     return NULL;
 }
 
+/**
+ * Spawns threads to process transactions for each user account concurrently.
+ */
 void processAllTransactionsConcurrently() {
     pthread_t threads[userCount];
     for (int i = 0; i < userCount; i++) {
@@ -159,6 +182,8 @@ void processAllTransactionsConcurrently() {
     }
 }
 
+
+//Main function that calls all functions needed.
 int main() {
 
     initTransactionLog(40);
